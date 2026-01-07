@@ -98,6 +98,18 @@ export function useStorage() {
     }
   };
 
+  const updateBucketAccess = async (id: string, access: 'PRIVATE' | 'PUBLIC'): Promise<Bucket | null> => {
+    try {
+      const bucket = await api.updateBucketAccess(id, access);
+      toast.success(`Bucket access updated to ${access.toLowerCase()}`);
+      return bucket;
+    } catch (error) {
+      console.error('Error updating bucket access:', error);
+      toast.error('Failed to update bucket access');
+      return null;
+    }
+  };
+
   return {
     loading: false,
     fetchBuckets,
@@ -108,5 +120,6 @@ export function useStorage() {
     deleteItem,
     deleteItems,
     deleteBucket,
+    updateBucketAccess,
   };
 }

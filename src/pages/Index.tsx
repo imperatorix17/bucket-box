@@ -22,7 +22,7 @@ export default function Index() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile, deleteItem, deleteItems, deleteBucket } = useStorage();
+  const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile, deleteItem, deleteItems, deleteBucket, updateBucketAccess } = useStorage();
 
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<Bucket | null>(null);
@@ -255,6 +255,17 @@ export default function Index() {
     setDeleteBucketDialogOpen(true);
   };
 
+  const handleToggleBucketAccess = async (bucket: Bucket) => {
+    const newAccess = bucket.access === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+    const updated = await updateBucketAccess(bucket.id, newAccess);
+    if (updated) {
+      setBuckets(prev => prev.map(b => b.id === bucket.id ? updated : b));
+      if (selectedBucket?.id === bucket.id) {
+        setSelectedBucket(updated);
+      }
+    }
+  };
+
   if (isLoading || !isAuthenticated) {
     return null;
   }
@@ -268,6 +279,8 @@ export default function Index() {
           onSelectBucket={handleBucketSelect}
           onCreateBucket={() => setCreateBucketOpen(true)}
           onDeleteBucket={handleBucketDelete}
+          onToggleBucketAccess={handleToggleBucketAccess}
+          onLogout={handleLogout}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
