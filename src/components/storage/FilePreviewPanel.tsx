@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { X, Download, Trash2, Link2, Eye, Folder, File, Image, FileText, FileVideo, FileAudio } from 'lucide-react';
 import { StorageItem, Bucket } from '@/types/storage';
 import { Button } from '@/components/ui/button';
 import { formatFileSize, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
 
 interface FilePreviewPanelProps {
   item: StorageItem | null;
@@ -33,6 +35,8 @@ function isImageFile(mimeType?: string): boolean {
 }
 
 export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePreviewPanelProps) {
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   if (!item || !bucket) return null;
 
   const publicUrl = item.storagePath 
@@ -58,115 +62,121 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
     }
   };
 
+  const handleDeleteConfirm = () => {
+    setDeleteDialogOpen(false);
+    onDelete();
+  };
+
   return (
-    <div className="w-80 border-l border-border bg-card flex flex-col h-full animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h3 className="font-medium text-sm truncate flex-1">{item.name}</h3>
-        <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-
-      {/* Preview */}
-      <div className="p-4 border-b border-border">
-        <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-          {item.type === 'folder' ? (
-            <Folder className="w-16 h-16 text-warning" />
-          ) : isImageFile(item.mimeType) && publicUrl ? (
-            <img
-              src={publicUrl}
-              alt={item.name}
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            getFileIcon(item.mimeType)
-          )}
-        </div>
-      </div>
-
-      {/* Actions */}
-      {item.type === 'file' && (
-        <div className="p-4 border-b border-border space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Actions:</p>
-          <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleDownload}>
-            <Download className="w-4 h-4" />
-            Download
-          </Button>
-          {publicUrl && (
-            <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleCopyUrl}>
-              <Link2 className="w-4 h-4" />
-              Copy URL
-            </Button>
-          )}
-          {isImageFile(item.mimeType) && publicUrl && (
-            <Button variant="ghost" className="w-full justify-start gap-2" onClick={handlePreviewOpen}>
-              <Eye className="w-4 h-4" />
-              Preview
-            </Button>
-          )}
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={onDelete}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
+    <>
+      <div className="w-80 border-l border-border bg-card flex flex-col h-full animate-fade-in overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
+          <h3 className="font-medium text-sm truncate flex-1">{item.name}</h3>
+          <Button variant="ghost" size="icon" onClick={onClose} className="shrink-0">
+            <X className="w-4 h-4" />
           </Button>
         </div>
-      )}
 
-      {item.type === 'folder' && (
-        <div className="p-4 border-b border-border space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Actions:</p>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={onDelete}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </Button>
-        </div>
-      )}
-
-      {/* Object Info */}
-      <div className="p-4 flex-1 overflow-auto">
-        <p className="text-xs font-medium text-muted-foreground uppercase mb-3">Object Info</p>
-        
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs text-muted-foreground">Name:</p>
-            <p className="text-sm font-medium break-all">{item.name}</p>
-          </div>
-
-          {item.type === 'file' && item.size !== undefined && (
-            <div>
-              <p className="text-xs text-muted-foreground">Size:</p>
-              <p className="text-sm">{formatFileSize(item.size)}</p>
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-auto scrollbar-thin">
+          {/* Preview */}
+          <div className="p-4">
+            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+              {item.type === 'folder' ? (
+                <Folder className="w-16 h-16 text-warning" />
+              ) : isImageFile(item.mimeType) && publicUrl ? (
+                <img
+                  src={publicUrl}
+                  alt={item.name}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                getFileIcon(item.mimeType)
+              )}
             </div>
-          )}
-
-          <div>
-            <p className="text-xs text-muted-foreground">Type:</p>
-            <p className="text-sm">{item.type === 'folder' ? 'Folder' : (item.mimeType || 'Unknown')}</p>
           </div>
 
-          <div>
-            <p className="text-xs text-muted-foreground">Last Modified:</p>
-            <p className="text-sm">{formatDate(item.lastModified)}</p>
+          {/* Actions */}
+          <div className="px-4 pb-4 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Actions:</p>
+            {item.type === 'file' && (
+              <>
+                <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleDownload}>
+                  <Download className="w-4 h-4" />
+                  Download
+                </Button>
+                {publicUrl && (
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleCopyUrl}>
+                    <Link2 className="w-4 h-4" />
+                    Copy URL
+                  </Button>
+                )}
+                {isImageFile(item.mimeType) && publicUrl && (
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={handlePreviewOpen}>
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </Button>
+                )}
+              </>
+            )}
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </Button>
           </div>
 
-          {publicUrl && item.type === 'file' && (
-            <div>
-              <p className="text-xs text-muted-foreground">Public URL:</p>
-              <p className="text-xs text-primary break-all cursor-pointer hover:underline" onClick={handleCopyUrl}>
-                {publicUrl}
-              </p>
+          {/* Object Info */}
+          <div className="p-4 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground uppercase mb-3">Object Info</p>
+            
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs text-muted-foreground">Name:</p>
+                <p className="text-sm font-medium break-all">{item.name}</p>
+              </div>
+
+              {item.type === 'file' && item.size !== undefined && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Size:</p>
+                  <p className="text-sm">{formatFileSize(item.size)}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs text-muted-foreground">Type:</p>
+                <p className="text-sm">{item.type === 'folder' ? 'Folder' : (item.mimeType || 'Unknown')}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Last Modified:</p>
+                <p className="text-sm">{formatDate(item.lastModified)}</p>
+              </div>
+
+              {publicUrl && item.type === 'file' && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Public URL:</p>
+                  <p className="text-xs text-primary break-all cursor-pointer hover:underline" onClick={handleCopyUrl}>
+                    {publicUrl}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
-    </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title={`Delete "${item.name}"?`}
+        description={`Are you sure you want to delete this ${item.type}? This action cannot be undone.`}
+        onConfirm={handleDeleteConfirm}
+      />
+    </>
   );
 }
