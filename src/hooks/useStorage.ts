@@ -197,6 +197,70 @@ export function useStorage() {
     return true;
   }, []);
 
+  const deleteItems = useCallback(async (items: StorageItem[], bucketName: string): Promise<boolean> => {
+    const filesToDelete = items.filter(i => i.type === 'file' && i.storagePath).map(i => i.storagePath!);
+    
+    if (filesToDelete.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('user-files')
+        .remove(filesToDelete);
+
+      if (storageError) {
+        console.error('Error deleting from storage:', storageError);
+      }
+    }
+
+    const { error } = await supabase
+      .from('storage_items')
+      .delete()
+      .in('id', items.map(i => i.id));
+
+    if (error) {
+      console.error('Error deleting items:', error);
+      toast.error('Failed to delete items');
+      return false;
+    }
+
+    toast.success(`${items.length} items deleted`);
+    return true;
+  }, []);
+
+  const deleteBucket = useCallback(async (bucket: { id: string; name: string }): Promise<boolean> => {
+    // First, get all items in this bucket to delete from storage
+    const { data: items } = await supabase
+      .from('storage_items')
+      .select('*')
+      .eq('bucket_id', bucket.id);
+
+    if (items && items.length > 0) {
+      const filesToDelete = items
+        .filter(i => i.type === 'file' && i.storage_path)
+        .map(i => i.storage_path!);
+      
+      if (filesToDelete.length > 0) {
+        await supabase.storage.from('user-files').remove(filesToDelete);
+      }
+
+      // Delete all items from database
+      await supabase.from('storage_items').delete().eq('bucket_id', bucket.id);
+    }
+
+    // Delete the bucket
+    const { error } = await supabase
+      .from('buckets')
+      .delete()
+      .eq('id', bucket.id);
+
+    if (error) {
+      console.error('Error deleting bucket:', error);
+      toast.error('Failed to delete bucket');
+      return false;
+    }
+
+    toast.success(`Bucket "${bucket.name}" deleted`);
+    return true;
+  }, []);
+
   return {
     loading,
     fetchBuckets,
@@ -205,5 +269,7 @@ export function useStorage() {
     createFolder,
     uploadFile,
     deleteItem,
+    deleteItems,
+    deleteBucket,
   };
 }
