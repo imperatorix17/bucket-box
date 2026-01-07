@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import config from '../../config.json';
+
+// Config hardcoded - edit these values to change credentials
+const config = {
+  auth: {
+    username: "admin",
+    password: "admin123"
+  }
+};
 
 interface AuthContextType {
   isAuthenticated: boolean;
