@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/formatters';
 interface BucketHeaderProps {
   bucket: Bucket;
   breadcrumbs: BreadcrumbItem[];
-  onNavigate: (path: string) => void;
+  onBreadcrumbClick: (path: string) => void;
   onRefresh: () => void;
   onUpload: () => void;
   onCreateFolder: () => void;
@@ -15,7 +15,7 @@ interface BucketHeaderProps {
 export function BucketHeader({
   bucket,
   breadcrumbs,
-  onNavigate,
+  onBreadcrumbClick,
   onRefresh,
   onUpload,
   onCreateFolder,
@@ -56,7 +56,7 @@ export function BucketHeader({
           disabled={!canGoBack}
           onClick={() => {
             const previousPath = breadcrumbs[breadcrumbs.length - 2]?.path || '';
-            onNavigate(previousPath);
+            onBreadcrumbClick(previousPath);
           }}
           className="shrink-0"
         >
@@ -68,10 +68,10 @@ export function BucketHeader({
             <span key={crumb.path} className="flex items-center">
               {index > 0 && <span className="mx-2 text-muted-foreground">/</span>}
               <button
-                onClick={() => onNavigate(crumb.path)}
+                onClick={() => onBreadcrumbClick(crumb.path)}
                 className="text-sm hover:text-primary transition-colors"
               >
-                {crumb.name}
+                {crumb.label}
               </button>
             </span>
           ))}
