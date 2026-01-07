@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Database, FileText, LogOut, HardDrive } from 'lucide-react';
+import { Plus, Search, Database, FileText, LogOut, HardDrive, Trash2 } from 'lucide-react';
 import { Bucket } from '@/types/storage';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ interface BucketSidebarProps {
   selectedBucket: Bucket | null;
   onSelectBucket: (bucket: Bucket) => void;
   onCreateBucket: () => void;
+  onDeleteBucket: (bucket: Bucket) => void;
 }
 
 export function BucketSidebar({
@@ -17,6 +18,7 @@ export function BucketSidebar({
   selectedBucket,
   onSelectBucket,
   onCreateBucket,
+  onDeleteBucket,
 }: BucketSidebarProps) {
   const [filter, setFilter] = useState('');
 
@@ -72,20 +74,29 @@ export function BucketSidebar({
       {/* Bucket List */}
       <div className="flex-1 overflow-y-auto scrollbar-thin px-2">
         {filteredBuckets.map((bucket) => (
-          <button
+          <div
             key={bucket.id}
-            onClick={() => onSelectBucket(bucket)}
             className={cn(
-              'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors',
+              'group w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors cursor-pointer',
               'hover:bg-sidebar-accent',
               selectedBucket?.id === bucket.id
                 ? 'bg-sidebar-accent text-sidebar-accent-foreground'
                 : 'text-sidebar-foreground'
             )}
+            onClick={() => onSelectBucket(bucket)}
           >
             <Database className="w-4 h-4 text-destructive shrink-0" />
-            <span className="truncate text-sm">{bucket.name}</span>
-          </button>
+            <span className="truncate text-sm flex-1">{bucket.name}</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteBucket(bucket);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/20 rounded transition-opacity"
+            >
+              <Trash2 className="w-3 h-3 text-destructive" />
+            </button>
+          </div>
         ))}
       </div>
 

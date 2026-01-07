@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, File, ChevronUp, ChevronDown } from 'lucide-react';
+import { Folder, File, ChevronUp, ChevronDown, Image, FileText, FileVideo, FileAudio } from 'lucide-react';
 import { StorageItem } from '@/types/storage';
 import { Checkbox } from '@/components/ui/checkbox';
 import { formatFileSize, formatDate } from '@/lib/formatters';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 interface FileTableProps {
   items: StorageItem[];
   onItemClick: (item: StorageItem) => void;
+  onItemSelect: (item: StorageItem) => void;
   selectedItems: string[];
   onSelectionChange: (ids: string[]) => void;
 }
@@ -15,9 +16,25 @@ interface FileTableProps {
 type SortField = 'name' | 'lastModified' | 'size';
 type SortDirection = 'asc' | 'desc';
 
+function getFileIcon(mimeType?: string) {
+  if (!mimeType) return <File className="w-5 h-5 text-success" />;
+  
+  if (mimeType.startsWith('image/')) {
+    return <Image className="w-5 h-5 text-success" />;
+  } else if (mimeType.startsWith('video/')) {
+    return <FileVideo className="w-5 h-5 text-primary" />;
+  } else if (mimeType.startsWith('audio/')) {
+    return <FileAudio className="w-5 h-5 text-warning" />;
+  } else if (mimeType.includes('pdf') || mimeType.includes('document')) {
+    return <FileText className="w-5 h-5 text-destructive" />;
+  }
+  return <File className="w-5 h-5 text-success" />;
+}
+
 export function FileTable({
   items,
   onItemClick,
+  onItemSelect,
   selectedItems,
   onSelectionChange,
 }: FileTableProps) {
@@ -140,25 +157,25 @@ export function FileTable({
                 'border-b border-border/50 hover:bg-card/50 transition-colors cursor-pointer animate-fade-in',
                 selectedItems.includes(item.id) && 'bg-primary/5'
               )}
+              onClick={() => onItemSelect(item)}
             >
-              <td className="p-3">
+              <td className="p-3" onClick={(e) => e.stopPropagation()}>
                 <Checkbox
                   checked={selectedItems.includes(item.id)}
                   onCheckedChange={(checked) =>
                     handleSelectItem(item.id, checked as boolean)
                   }
-                  onClick={(e) => e.stopPropagation()}
                 />
               </td>
               <td
                 className="p-3"
-                onClick={() => onItemClick(item)}
+                onDoubleClick={() => onItemClick(item)}
               >
                 <div className="flex items-center gap-3">
                   {item.type === 'folder' ? (
                     <Folder className="w-5 h-5 text-warning" />
                   ) : (
-                    <File className="w-5 h-5 text-success" />
+                    getFileIcon(item.mimeType)
                   )}
                   <span className="text-sm font-medium">{item.name}</span>
                 </div>

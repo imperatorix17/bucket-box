@@ -12,13 +12,15 @@ import { CreateFolderDialog } from '@/components/storage/CreateFolderDialog';
 import { EmptyState } from '@/components/storage/EmptyState';
 import { FileDropZone } from '@/components/storage/FileDropZone';
 import { UploadProgress, UploadItem } from '@/components/storage/UploadProgress';
+import { FilePreviewPanel } from '@/components/storage/FilePreviewPanel';
+import { DeleteConfirmDialog } from '@/components/storage/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { LogOut, Trash2 } from 'lucide-react';
 
 export default function Index() {
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
-  const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile } = useStorage();
+  const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile, deleteItem, deleteItems, deleteBucket } = useStorage();
 
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<Bucket | null>(null);
@@ -27,9 +29,14 @@ export default function Index() {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [items, setItems] = useState<StorageItem[]>([]);
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [previewItem, setPreviewItem] = useState<StorageItem | null>(null);
 
   const [createBucketOpen, setCreateBucketOpen] = useState(false);
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteBucketDialogOpen, setDeleteBucketDialogOpen] = useState(false);
+  const [bucketToDelete, setBucketToDelete] = useState<Bucket | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -94,18 +101,25 @@ export default function Index() {
     setCurrentPath('');
     setSelectedItems([]);
     setSearchQuery('');
+    setPreviewItem(null);
   };
 
   const handleItemClick = (item: StorageItem) => {
     if (item.type === 'folder') {
       setCurrentPath(currentPath ? `${currentPath}/${item.name}` : item.name);
       setSelectedItems([]);
+      setPreviewItem(null);
     }
+  };
+
+  const handleItemSelect = (item: StorageItem) => {
+    setPreviewItem(item);
   };
 
   const handleBreadcrumbClick = (path: string) => {
     setCurrentPath(path);
     setSelectedItems([]);
+    setPreviewItem(null);
   };
 
   const handleCreateBucket = async (name: string, access: 'PRIVATE' | 'PUBLIC') => {
@@ -189,6 +203,62 @@ export default function Index() {
     setUploads([]);
   };
 
+  const handleDeleteSelected = async () => {
+    if (!selectedBucket || selectedItems.length === 0) return;
+    setDeleteLoading(true);
+    
+    const itemsToDelete = items.filter(i => selectedItems.includes(i.id));
+    const success = await deleteItems(itemsToDelete, selectedBucket.name);
+    
+    if (success) {
+      setItems(prev => prev.filter(i => !selectedItems.includes(i.id)));
+      setSelectedItems([]);
+      setPreviewItem(null);
+    }
+    
+    setDeleteLoading(false);
+    setDeleteDialogOpen(false);
+  };
+
+  const handleDeletePreviewItem = async () => {
+    if (!selectedBucket || !previewItem) return;
+    setDeleteLoading(true);
+    
+    const success = await deleteItem(previewItem, selectedBucket.name);
+    
+    if (success) {
+      setItems(prev => prev.filter(i => i.id !== previewItem.id));
+      setPreviewItem(null);
+    }
+    
+    setDeleteLoading(false);
+  };
+
+  const handleDeleteBucket = async () => {
+    if (!bucketToDelete) return;
+    setDeleteLoading(true);
+    
+    const success = await deleteBucket(bucketToDelete);
+    
+    if (success) {
+      setBuckets(prev => prev.filter(b => b.id !== bucketToDelete.id));
+      if (selectedBucket?.id === bucketToDelete.id) {
+        setSelectedBucket(null);
+        setItems([]);
+        setPreviewItem(null);
+      }
+    }
+    
+    setDeleteLoading(false);
+    setDeleteBucketDialogOpen(false);
+    setBucketToDelete(null);
+  };
+
+  const handleBucketDelete = (bucket: Bucket) => {
+    setBucketToDelete(bucket);
+    setDeleteBucketDialogOpen(true);
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -201,47 +271,69 @@ export default function Index() {
           selectedBucket={selectedBucket}
           onSelectBucket={handleBucketSelect}
           onCreateBucket={() => setCreateBucketOpen(true)}
+          onDeleteBucket={handleBucketDelete}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="border-b border-border p-4 flex items-center gap-4">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            {selectedItems.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setDeleteDialogOpen(true)}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete ({selectedItems.length})
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
 
           {selectedBucket ? (
-            <>
-              <BucketHeader
-                bucket={selectedBucket}
-                breadcrumbs={breadcrumbs}
-                onBreadcrumbClick={handleBreadcrumbClick}
-                onRefresh={handleRefresh}
-                onUpload={() => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.multiple = true;
-                  input.onchange = (e) => {
-                    const files = Array.from((e.target as HTMLInputElement).files || []);
-                    if (files.length > 0) {
-                      handleFilesDropped(files);
-                    }
-                  };
-                  input.click();
-                }}
-                onCreateFolder={() => setCreateFolderOpen(true)}
-              />
-
-              <div className="flex-1 overflow-auto p-4">
-                <FileTable
-                  items={filteredItems}
-                  onItemClick={handleItemClick}
-                  selectedItems={selectedItems}
-                  onSelectionChange={setSelectedItems}
+            <div className="flex-1 flex overflow-hidden">
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <BucketHeader
+                  bucket={selectedBucket}
+                  breadcrumbs={breadcrumbs}
+                  onBreadcrumbClick={handleBreadcrumbClick}
+                  onRefresh={handleRefresh}
+                  onUpload={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.multiple = true;
+                    input.onchange = (e) => {
+                      const files = Array.from((e.target as HTMLInputElement).files || []);
+                      if (files.length > 0) {
+                        handleFilesDropped(files);
+                      }
+                    };
+                    input.click();
+                  }}
+                  onCreateFolder={() => setCreateFolderOpen(true)}
                 />
+
+                <div className="flex-1 overflow-auto p-4">
+                  <FileTable
+                    items={filteredItems}
+                    onItemClick={handleItemClick}
+                    onItemSelect={handleItemSelect}
+                    selectedItems={selectedItems}
+                    onSelectionChange={setSelectedItems}
+                  />
+                </div>
               </div>
-            </>
+
+              <FilePreviewPanel
+                item={previewItem}
+                bucket={selectedBucket}
+                onClose={() => setPreviewItem(null)}
+                onDelete={handleDeletePreviewItem}
+              />
+            </div>
           ) : (
             <EmptyState onCreateBucket={() => setCreateBucketOpen(true)} />
           )}
@@ -264,6 +356,24 @@ export default function Index() {
           onOpenChange={setCreateFolderOpen}
           onSubmit={handleCreateFolder}
           currentPath={currentPath}
+        />
+
+        <DeleteConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Delete selected items?"
+          description={`Are you sure you want to delete ${selectedItems.length} item(s)? This action cannot be undone.`}
+          onConfirm={handleDeleteSelected}
+          loading={deleteLoading}
+        />
+
+        <DeleteConfirmDialog
+          open={deleteBucketDialogOpen}
+          onOpenChange={setDeleteBucketDialogOpen}
+          title={`Delete bucket "${bucketToDelete?.name}"?`}
+          description="This will permanently delete the bucket and all its contents. This action cannot be undone."
+          onConfirm={handleDeleteBucket}
+          loading={deleteLoading}
         />
       </div>
     </FileDropZone>
