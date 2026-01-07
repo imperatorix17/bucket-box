@@ -15,11 +15,13 @@ import { UploadProgress, UploadItem } from '@/components/storage/UploadProgress'
 import { FilePreviewPanel } from '@/components/storage/FilePreviewPanel';
 import { DeleteConfirmDialog } from '@/components/storage/DeleteConfirmDialog';
 import { Button } from '@/components/ui/button';
-import { LogOut, Trash2 } from 'lucide-react';
+import { LogOut, Trash2, Sun, Moon, HelpCircle } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 export default function Index() {
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile, deleteItem, deleteItems, deleteBucket } = useStorage();
 
   const [buckets, setBuckets] = useState<Bucket[]>([]);
@@ -275,20 +277,33 @@ export default function Index() {
         />
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-border p-4 flex items-center gap-4">
+          <div className="border-b border-border p-3 flex items-center gap-3">
+            <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Object Browser</span>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
             {selectedItems.length > 0 && (
               <Button 
                 variant="destructive" 
                 size="sm"
                 onClick={() => setDeleteDialogOpen(true)}
-                className="gap-2"
+                className="gap-2 shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete ({selectedItems.length})
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+            <Button variant="ghost" size="icon" className="shrink-0" title="Help">
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="shrink-0" 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout" className="shrink-0">
               <LogOut className="h-4 w-4" />
             </Button>
           </div>
