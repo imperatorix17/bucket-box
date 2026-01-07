@@ -217,11 +217,11 @@ export async function deleteItem(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// File URLs
-export function getFileUrl(bucketName: string, filePath: string): string {
+// File URLs - uses storagePath directly
+export function getFileUrl(_bucketName: string, storagePath: string): string {
   const { data } = supabase.storage
     .from('user-files')
-    .getPublicUrl(filePath);
+    .getPublicUrl(storagePath);
   
   return data.publicUrl;
 }

@@ -14,7 +14,7 @@ interface FilePreviewPanelProps {
   onDelete: () => void;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Removed unused API_URL constant
 
 function getFileIcon(mimeType?: string) {
   if (!mimeType) return <File className="w-12 h-12 text-muted-foreground" />;
@@ -40,9 +40,10 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
 
   if (!item || !bucket) return null;
 
-  // Build file URL for the local API
-  const filePath = item.path ? `${item.path}/${item.name}` : item.name;
-  const publicUrl = item.type === 'file' ? getFileUrl(bucket.name, filePath) : null;
+  // Build file URL using the storage path
+  const publicUrl = item.type === 'file' && item.storagePath 
+    ? getFileUrl(bucket.name, item.storagePath) 
+    : null;
 
   const handleCopyUrl = () => {
     if (publicUrl) {
