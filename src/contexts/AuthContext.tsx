@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-// Config hardcoded - edit these values to change credentials
+// Credentials from .env (VITE_AUTH_USERNAME and VITE_AUTH_PASSWORD)
+// Fallback to defaults if not set
 const config = {
   auth: {
-    username: "admin",
-    password: "admin123"
+    username: import.meta.env.VITE_AUTH_USERNAME || "admin",
+    password: import.meta.env.VITE_AUTH_PASSWORD || "admin123"
   }
 };
 
