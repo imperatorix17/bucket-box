@@ -194,15 +194,15 @@ export default function Index() {
   }
 
   return (
-    <div className="h-screen flex bg-background">
-      <BucketSidebar
-        buckets={buckets}
-        selectedBucket={selectedBucket}
-        onSelectBucket={handleBucketSelect}
-        onCreateBucket={() => setCreateBucketOpen(true)}
-      />
+    <FileDropZone onFilesDropped={handleFilesDropped} disabled={!selectedBucket}>
+      <div className="h-screen flex bg-background">
+        <BucketSidebar
+          buckets={buckets}
+          selectedBucket={selectedBucket}
+          onSelectBucket={handleBucketSelect}
+          onCreateBucket={() => setCreateBucketOpen(true)}
+        />
 
-      <FileDropZone onFilesDropped={handleFilesDropped} disabled={!selectedBucket}>
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="border-b border-border p-4 flex items-center gap-4">
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
@@ -246,26 +246,26 @@ export default function Index() {
             <EmptyState onCreateBucket={() => setCreateBucketOpen(true)} />
           )}
         </div>
-      </FileDropZone>
 
-      <UploadProgress
-        uploads={uploads}
-        onDismiss={dismissUpload}
-        onDismissAll={dismissAllUploads}
-      />
+        <UploadProgress
+          uploads={uploads}
+          onDismiss={dismissUpload}
+          onDismissAll={dismissAllUploads}
+        />
 
-      <CreateBucketDialog
-        open={createBucketOpen}
-        onOpenChange={setCreateBucketOpen}
-        onSubmit={handleCreateBucket}
-      />
+        <CreateBucketDialog
+          open={createBucketOpen}
+          onOpenChange={setCreateBucketOpen}
+          onSubmit={handleCreateBucket}
+        />
 
-      <CreateFolderDialog
-        open={createFolderOpen}
-        onOpenChange={setCreateFolderOpen}
-        onSubmit={handleCreateFolder}
-        currentPath={currentPath}
-      />
-    </div>
+        <CreateFolderDialog
+          open={createFolderOpen}
+          onOpenChange={setCreateFolderOpen}
+          onSubmit={handleCreateFolder}
+          currentPath={currentPath}
+        />
+      </div>
+    </FileDropZone>
   );
 }
