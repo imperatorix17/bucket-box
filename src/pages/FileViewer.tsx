@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import AccessDenied from './AccessDenied';
 import { Loader2 } from 'lucide-react';
+import { getFileUrl } from '@/services/api';
 
 export default function FileViewer() {
   const { '*': filePath } = useParams();
@@ -24,55 +24,37 @@ export default function FileViewer() {
       const itemPath = pathParts.slice(1).join('/');
 
       try {
-        // Check if bucket exists and its access level
-        const { data: bucket, error: bucketError } = await supabase
-          .from('buckets')
-          .select('access')
-          .eq('name', bucketName)
-          .single();
-
-        if (bucketError || !bucket) {
+        // Build file URL
+        const url = getFileUrl(bucketName, itemPath);
+        
+        // Try to fetch the file to check access
+        const response = await fetch(url, { method: 'HEAD' });
+        
+        if (!response.ok) {
           setAccessDenied(true);
           setLoading(false);
           return;
         }
 
-        // If bucket is private, deny access
-        if (bucket.access === 'PRIVATE') {
-          setAccessDenied(true);
-          setLoading(false);
-          return;
-        }
-
-        // Get file from storage
-        const storagePath = `${bucketName}/${itemPath}`;
-        const { data } = supabase.storage
-          .from('user-files')
-          .getPublicUrl(storagePath);
-
-        if (data?.publicUrl) {
-          setFileUrl(data.publicUrl);
-          
-          // Determine mime type from extension
-          const ext = itemPath.split('.').pop()?.toLowerCase();
-          const mimeTypes: Record<string, string> = {
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'gif': 'image/gif',
-            'webp': 'image/webp',
-            'svg': 'image/svg+xml',
-            'pdf': 'application/pdf',
-            'txt': 'text/plain',
-            'html': 'text/html',
-            'css': 'text/css',
-            'js': 'application/javascript',
-            'json': 'application/json',
-          };
-          setMimeType(mimeTypes[ext || ''] || 'application/octet-stream');
-        } else {
-          setAccessDenied(true);
-        }
+        setFileUrl(url);
+        
+        // Determine mime type from extension
+        const ext = itemPath.split('.').pop()?.toLowerCase();
+        const mimeTypes: Record<string, string> = {
+          'png': 'image/png',
+          'jpg': 'image/jpeg',
+          'jpeg': 'image/jpeg',
+          'gif': 'image/gif',
+          'webp': 'image/webp',
+          'svg': 'image/svg+xml',
+          'pdf': 'application/pdf',
+          'txt': 'text/plain',
+          'html': 'text/html',
+          'css': 'text/css',
+          'js': 'application/javascript',
+          'json': 'application/json',
+        };
+        setMimeType(mimeTypes[ext || ''] || 'application/octet-stream');
       } catch (error) {
         console.error('Error checking file access:', error);
         setAccessDenied(true);

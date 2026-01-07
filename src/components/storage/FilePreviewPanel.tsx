@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { formatFileSize, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { getFileUrl } from '@/services/api';
 
 interface FilePreviewPanelProps {
   item: StorageItem | null;
@@ -13,7 +14,7 @@ interface FilePreviewPanelProps {
   onDelete: () => void;
 }
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 function getFileIcon(mimeType?: string) {
   if (!mimeType) return <File className="w-12 h-12 text-muted-foreground" />;
@@ -39,9 +40,9 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
 
   if (!item || !bucket) return null;
 
-  const publicUrl = item.storagePath 
-    ? `${SUPABASE_URL}/storage/v1/object/public/user-files/${item.storagePath}`
-    : null;
+  // Build file URL for the local API
+  const filePath = item.path ? `${item.path}/${item.name}` : item.name;
+  const publicUrl = item.type === 'file' ? getFileUrl(bucket.name, filePath) : null;
 
   const handleCopyUrl = () => {
     if (publicUrl) {
@@ -106,7 +107,7 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
                   <Download className="w-4 h-4" />
                   Download
                 </Button>
-                {publicUrl && (
+                {publicUrl && bucket.access === 'PUBLIC' && (
                   <Button variant="ghost" className="w-full justify-start gap-2" onClick={handleCopyUrl}>
                     <Link2 className="w-4 h-4" />
                     Copy URL
@@ -157,7 +158,7 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
                 <p className="text-sm">{formatDate(item.lastModified)}</p>
               </div>
 
-              {publicUrl && item.type === 'file' && (
+              {publicUrl && item.type === 'file' && bucket.access === 'PUBLIC' && (
                 <div>
                   <p className="text-xs text-muted-foreground">Public URL:</p>
                   <p className="text-xs text-primary break-all cursor-pointer hover:underline" onClick={handleCopyUrl}>
