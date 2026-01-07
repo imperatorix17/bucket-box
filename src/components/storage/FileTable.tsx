@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Folder, File, ChevronUp, ChevronDown, Image, FileText, FileVideo, FileAudio } from 'lucide-react';
+import { Folder, File, ChevronUp, ChevronDown, Image, FileText, FileVideo, FileAudio, CheckSquare, Trash2 } from 'lucide-react';
 import { StorageItem } from '@/types/storage';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 import { formatFileSize, formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface FileTableProps {
   items: StorageItem[];
@@ -11,6 +18,7 @@ interface FileTableProps {
   onItemSelect: (item: StorageItem) => void;
   selectedItems: string[];
   onSelectionChange: (ids: string[]) => void;
+  onDeleteSelected?: () => void;
 }
 
 type SortField = 'name' | 'lastModified' | 'size';
@@ -37,6 +45,7 @@ export function FileTable({
   onItemSelect,
   selectedItems,
   onSelectionChange,
+  onDeleteSelected,
 }: FileTableProps) {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -111,6 +120,32 @@ export function FileTable({
 
   return (
     <div className="overflow-x-auto">
+      {/* Bulk actions bar */}
+      {selectedItems.length > 0 && (
+        <div className="flex items-center gap-3 p-3 border-b border-border bg-muted/30">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <CheckSquare className="w-4 h-4" />
+                Bulk actions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem onClick={onDeleteSelected} className="text-destructive focus:text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete selected
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onSelectionChange([])}>
+                Deselect all
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="text-sm text-muted-foreground">
+            {selectedItems.length} record{selectedItems.length > 1 ? 's' : ''} selected
+          </span>
+        </div>
+      )}
+
       <table className="w-full">
         <thead>
           <tr className="border-b border-border text-left">

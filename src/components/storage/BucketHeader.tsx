@@ -1,13 +1,7 @@
-import { ChevronLeft, Upload, FolderPlus, Database, Trash2, CheckSquare } from 'lucide-react';
+import { ChevronLeft, Upload, FolderPlus, Database } from 'lucide-react';
 import { Bucket, BreadcrumbItem } from '@/types/storage';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/formatters';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface BucketHeaderProps {
   bucket: Bucket;
@@ -15,10 +9,6 @@ interface BucketHeaderProps {
   onBreadcrumbClick: (path: string) => void;
   onUpload: () => void;
   onCreateFolder: () => void;
-  selectedCount: number;
-  onDeleteSelected: () => void;
-  onSelectAll: () => void;
-  onDeselectAll: () => void;
 }
 
 export function BucketHeader({
@@ -27,10 +17,6 @@ export function BucketHeader({
   onBreadcrumbClick,
   onUpload,
   onCreateFolder,
-  selectedCount,
-  onDeleteSelected,
-  onSelectAll,
-  onDeselectAll,
 }: BucketHeaderProps) {
   const canGoBack = breadcrumbs.length > 1;
 
@@ -49,30 +35,6 @@ export function BucketHeader({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {selectedCount > 0 ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <CheckSquare className="w-4 h-4" />
-                  Bulk actions
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={onDeleteSelected} className="text-destructive focus:text-destructive">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete {selectedCount} item{selectedCount > 1 ? 's' : ''}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDeselectAll}>
-                  Deselect all
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button variant="ghost" size="sm" onClick={onSelectAll}>
-              <CheckSquare className="w-4 h-4 mr-2" />
-              Select all
-            </Button>
-          )}
           <Button size="sm" onClick={onUpload}>
             <Upload className="w-4 h-4 mr-2" />
             Upload

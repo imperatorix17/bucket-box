@@ -184,14 +184,6 @@ export default function Index() {
     navigate('/login');
   };
 
-  const handleSelectAll = () => {
-    setSelectedItems(items.map(i => i.id));
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedItems([]);
-  };
-
   const dismissUpload = (id: string) => {
     setUploads(prev => prev.filter(u => u.id !== id));
   };
@@ -325,10 +317,6 @@ export default function Index() {
                     input.click();
                   }}
                   onCreateFolder={() => setCreateFolderOpen(true)}
-                  selectedCount={selectedItems.length}
-                  onDeleteSelected={() => setDeleteDialogOpen(true)}
-                  onSelectAll={handleSelectAll}
-                  onDeselectAll={handleDeselectAll}
                 />
 
                 <div className="flex-1 overflow-auto p-4">
@@ -338,6 +326,7 @@ export default function Index() {
                     onItemSelect={handleItemSelect}
                     selectedItems={selectedItems}
                     onSelectionChange={setSelectedItems}
+                    onDeleteSelected={() => setDeleteDialogOpen(true)}
                   />
                 </div>
               </div>
