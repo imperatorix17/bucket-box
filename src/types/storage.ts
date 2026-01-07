@@ -13,9 +13,11 @@ export interface StorageItem {
   size?: number;
   lastModified: Date;
   path: string;
+  mimeType?: string;
+  storagePath?: string;
 }
 
 export interface BreadcrumbItem {
-  name: string;
+  label: string;
   path: string;
 }
