@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import authConfig from '@/config/auth.json';
+import config from '../../config.json';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (username: string, password: string): boolean => {
-    if (username === authConfig.username && password === authConfig.password) {
+    if (username === config.auth.username && password === config.auth.password) {
       setIsAuthenticated(true);
       localStorage.setItem('cloudvault_auth', 'true');
       return true;
