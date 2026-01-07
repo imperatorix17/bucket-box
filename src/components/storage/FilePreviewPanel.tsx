@@ -14,7 +14,7 @@ interface FilePreviewPanelProps {
   onDelete: () => void;
 }
 
-// Removed unused API_URL constant
+
 
 function getFileIcon(mimeType?: string) {
   if (!mimeType) return <File className="w-12 h-12 text-muted-foreground" />;
