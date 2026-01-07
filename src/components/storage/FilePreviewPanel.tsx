@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { X, Download, Trash2, Link2, Eye, Folder, File, Image, FileText, FileVideo, FileAudio } from 'lucide-react';
+import { X, Download, Trash2, Link2, Eye, Folder, File, Image, FileText, FileVideo, FileAudio, Code } from 'lucide-react';
 import { StorageItem, Bucket } from '@/types/storage';
 import { Button } from '@/components/ui/button';
 import { formatFileSize, formatDate } from '@/lib/formatters';
 import { toast } from 'sonner';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { CodePreviewDialog, isTextFile } from './CodePreviewDialog';
 import { getFileUrl } from '@/services/api';
 
 interface FilePreviewPanelProps {
@@ -13,8 +14,6 @@ interface FilePreviewPanelProps {
   onClose: () => void;
   onDelete: () => void;
 }
-
-
 
 function getFileIcon(mimeType?: string) {
   if (!mimeType) return <File className="w-12 h-12 text-muted-foreground" />;
@@ -37,6 +36,7 @@ function isImageFile(mimeType?: string): boolean {
 
 export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePreviewPanelProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [codePreviewOpen, setCodePreviewOpen] = useState(false);
 
   if (!item || !bucket) return null;
 
@@ -44,6 +44,8 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
   const publicUrl = item.type === 'file' && item.storagePath 
     ? getFileUrl(bucket.name, item.storagePath) 
     : null;
+
+  const canPreviewAsText = item.type === 'file' && isTextFile(item.name, item.mimeType);
 
   const handleCopyUrl = () => {
     if (publicUrl) {
@@ -93,6 +95,8 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
                   alt={item.name}
                   className="w-full h-full object-contain"
                 />
+              ) : canPreviewAsText ? (
+                <Code className="w-16 h-16 text-primary" />
               ) : (
                 getFileIcon(item.mimeType)
               )}
@@ -118,6 +122,12 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
                   <Button variant="ghost" className="w-full justify-start gap-2" onClick={handlePreviewOpen}>
                     <Eye className="w-4 h-4" />
                     Preview
+                  </Button>
+                )}
+                {canPreviewAsText && (
+                  <Button variant="ghost" className="w-full justify-start gap-2" onClick={() => setCodePreviewOpen(true)}>
+                    <Code className="w-4 h-4" />
+                    View Code
                   </Button>
                 )}
               </>
@@ -178,6 +188,14 @@ export function FilePreviewPanel({ item, bucket, onClose, onDelete }: FilePrevie
         title={`Delete "${item.name}"?`}
         description={`Are you sure you want to delete this ${item.type}? This action cannot be undone.`}
         onConfirm={handleDeleteConfirm}
+      />
+
+      <CodePreviewDialog
+        open={codePreviewOpen}
+        onClose={() => setCodePreviewOpen(false)}
+        url={publicUrl}
+        fileName={item.name}
+        mimeType={item.mimeType}
       />
     </>
   );

@@ -61,6 +61,25 @@ export async function deleteBucket(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function updateBucketAccess(id: string, access: 'PRIVATE' | 'PUBLIC'): Promise<Bucket> {
+  const { data, error } = await supabase
+    .from('buckets')
+    .update({ access })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  return {
+    id: data.id,
+    name: data.name,
+    createdAt: new Date(data.created_at),
+    access: data.access as 'PRIVATE' | 'PUBLIC',
+    itemCount: 0,
+  };
+}
+
 // Storage Items
 export async function fetchItems(bucketId: string, path?: string): Promise<StorageItem[]> {
   const { data, error } = await supabase
