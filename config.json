@@ -1,0 +1,10 @@
+{
+  "auth": {
+    "username": "admin",
+    "password": "admin123"
+  },
+  "database": {
+    "supabaseUrl": "https://ciesqqpprnqjcjrvneol.supabase.co",
+    "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpZXNxcXBwcm5xamNqcnZuZW9sIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NzcyNDUsImV4cCI6MjA4MzM1MzI0NX0.4UGJD3xz3173qYpHdBBBnoprwTgE9DCTr3vdlUm7dlo"
+  }
+}
