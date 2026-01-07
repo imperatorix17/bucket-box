@@ -1,6 +1,5 @@
-import { useState, useCallback, ReactNode } from 'react';
+import { useState, useCallback, useEffect, ReactNode } from 'react';
 import { Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface FileDropZoneProps {
   onFilesDropped: (files: File[]) => void;
@@ -10,56 +9,83 @@ interface FileDropZoneProps {
 
 export function FileDropZone({ onFilesDropped, children, disabled }: FileDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) {
-      setIsDragging(true);
-    }
-  }, [disabled]);
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled && e.dataTransfer?.types.includes('Files')) {
+        setDragCounter(prev => prev + 1);
+        setIsDragging(true);
+      }
+    };
 
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }, []);
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragCounter(prev => {
+        const newCount = prev - 1;
+        if (newCount <= 0) {
+          setIsDragging(false);
+          return 0;
+        }
+        return newCount;
+      });
+    };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
 
-    if (disabled) return;
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      setDragCounter(0);
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      onFilesDropped(files);
-    }
-  }, [onFilesDropped, disabled]);
+      if (disabled) return;
+
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (files.length > 0) {
+        onFilesDropped(files);
+      }
+    };
+
+    // Attach to window for full page drop support
+    window.addEventListener('dragenter', handleDragEnter);
+    window.addEventListener('dragleave', handleDragLeave);
+    window.addEventListener('dragover', handleDragOver);
+    window.addEventListener('drop', handleDrop);
+
+    return () => {
+      window.removeEventListener('dragenter', handleDragEnter);
+      window.removeEventListener('dragleave', handleDragLeave);
+      window.removeEventListener('dragover', handleDragOver);
+      window.removeEventListener('drop', handleDrop);
+    };
+  }, [disabled, onFilesDropped]);
 
   return (
-    <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      className="relative flex-1 flex flex-col"
-    >
+    <>
       {children}
       
       {isDragging && (
-        <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-primary/10 border-4 border-dashed border-primary flex items-center justify-center z-[100] backdrop-blur-sm pointer-events-none">
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
-              <Upload className="w-8 h-8 text-primary" />
+            <div className="w-20 h-20 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+              <Upload className="w-10 h-10 text-primary" />
             </div>
             <div>
-              <p className="text-lg font-medium text-foreground">Drop files here</p>
-              <p className="text-sm text-muted-foreground">Files will be uploaded to the current folder</p>
+              <p className="text-xl font-medium text-foreground">Drop files anywhere</p>
+              <p className="text-sm text-muted-foreground">
+                {disabled ? 'Select a bucket first' : 'Files will be uploaded to the current folder'}
+              </p>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

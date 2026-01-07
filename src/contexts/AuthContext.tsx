@@ -8,6 +8,8 @@ const config = {
   }
 };
 
+const SESSION_DURATION_DAYS = 4; // Session lasts 4 days
+
 interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => boolean;
@@ -20,16 +22,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('cloudvault_auth');
-    if (stored === 'true') {
-      setIsAuthenticated(true);
+    const storedExpiry = localStorage.getItem('cloudvault_auth_expiry');
+    if (storedExpiry) {
+      const expiryTime = parseInt(storedExpiry, 10);
+      if (Date.now() < expiryTime) {
+        setIsAuthenticated(true);
+      } else {
+        // Session expired, clean up
+        localStorage.removeItem('cloudvault_auth_expiry');
+      }
     }
   }, []);
 
   const login = (username: string, password: string): boolean => {
     if (username === config.auth.username && password === config.auth.password) {
       setIsAuthenticated(true);
-      localStorage.setItem('cloudvault_auth', 'true');
+      const expiryTime = Date.now() + (SESSION_DURATION_DAYS * 24 * 60 * 60 * 1000);
+      localStorage.setItem('cloudvault_auth_expiry', expiryTime.toString());
       return true;
     }
     return false;
@@ -37,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('cloudvault_auth');
+    localStorage.removeItem('cloudvault_auth_expiry');
   };
 
   return (
