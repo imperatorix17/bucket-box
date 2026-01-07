@@ -49,27 +49,21 @@ export default function Index() {
 
   // Load buckets on mount
   useEffect(() => {
-    const loadBuckets = async () => {
-      const data = await fetchBuckets();
-      setBuckets(data);
-    };
     if (isAuthenticated) {
-      loadBuckets();
+      fetchBuckets().then(data => setBuckets(data));
     }
-  }, [fetchBuckets, isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   // Load items when bucket or path changes
   useEffect(() => {
-    const loadItems = async () => {
-      if (selectedBucket) {
-        const data = await fetchItems(selectedBucket.id, currentPath);
-        setItems(data);
-      } else {
-        setItems([]);
-      }
-    };
-    loadItems();
-  }, [selectedBucket, currentPath, fetchItems]);
+    if (selectedBucket) {
+      fetchItems(selectedBucket.id, currentPath).then(data => setItems(data));
+    } else {
+      setItems([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBucket?.id, currentPath]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery) return items;
