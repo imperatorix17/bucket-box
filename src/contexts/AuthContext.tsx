@@ -12,6 +12,7 @@ const SESSION_DURATION_DAYS = 4; // Session lasts 4 days
 
 interface AuthContextType {
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (username: string, password: string) => boolean;
   logout: () => void;
 }
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedExpiry = localStorage.getItem('cloudvault_auth_expiry');
@@ -32,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem('cloudvault_auth_expiry');
       }
     }
+    setIsLoading(false);
   }, []);
 
   const login = (username: string, password: string): boolean => {
@@ -50,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

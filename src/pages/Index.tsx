@@ -20,7 +20,7 @@ import { useTheme } from 'next-themes';
 
 export default function Index() {
   const navigate = useNavigate();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { fetchBuckets, createBucket, fetchItems, createFolder, uploadFile, deleteItem, deleteItems, deleteBucket } = useStorage();
 
@@ -40,12 +40,12 @@ export default function Index() {
   const [bucketToDelete, setBucketToDelete] = useState<Bucket | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated (after loading check)
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Load buckets on mount
   useEffect(() => {
@@ -255,7 +255,7 @@ export default function Index() {
     setDeleteBucketDialogOpen(true);
   };
 
-  if (!isAuthenticated) {
+  if (isLoading || !isAuthenticated) {
     return null;
   }
 
