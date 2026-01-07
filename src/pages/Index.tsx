@@ -179,16 +179,17 @@ export default function Index() {
     }
   }, [selectedBucket, currentPath, uploadFile]);
 
-  const handleRefresh = async () => {
-    if (selectedBucket) {
-      const data = await fetchItems(selectedBucket.id, currentPath);
-      setItems(data);
-    }
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const handleSelectAll = () => {
+    setSelectedItems(items.map(i => i.id));
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedItems([]);
   };
 
   const dismissUpload = (id: string) => {
@@ -287,17 +288,6 @@ export default function Index() {
           <div className="border-b border-border p-3 flex items-center gap-3">
             <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Object Browser</span>
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            {selectedItems.length > 0 && (
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => setDeleteDialogOpen(true)}
-                className="gap-2 shrink-0"
-              >
-                <Trash2 className="h-4 w-4" />
-                Delete ({selectedItems.length})
-              </Button>
-            )}
             <Button variant="ghost" size="icon" className="shrink-0" title="Help">
               <HelpCircle className="h-4 w-4" />
             </Button>
@@ -322,7 +312,6 @@ export default function Index() {
                   bucket={selectedBucket}
                   breadcrumbs={breadcrumbs}
                   onBreadcrumbClick={handleBreadcrumbClick}
-                  onRefresh={handleRefresh}
                   onUpload={() => {
                     const input = document.createElement('input');
                     input.type = 'file';
@@ -336,6 +325,10 @@ export default function Index() {
                     input.click();
                   }}
                   onCreateFolder={() => setCreateFolderOpen(true)}
+                  selectedCount={selectedItems.length}
+                  onDeleteSelected={() => setDeleteDialogOpen(true)}
+                  onSelectAll={handleSelectAll}
+                  onDeselectAll={handleDeselectAll}
                 />
 
                 <div className="flex-1 overflow-auto p-4">
